@@ -1,38 +1,42 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Controller;
 
 use App\Entity\Task;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\{jsonResponse, Request, Response, RedirectResponse};
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use App\Services\TaskService;
 
 class ToDoListController extends AbstractController
 {
+    private $taskService;
+
+    public function __construct(TaskService $taskService)
+    {
+        $this->taskService = $taskService;
+    }
+
     /**
      * @Route("/", name="to_do_list")
      */
-    public function index()
+    public function index(): Response
     {
-        $tasks = $this->getDoctrine()->getRepository(Task::class)->findBy([], ['id' => 'DESC']);
-        return $this->render('list.html.twig', ['tasks' => $tasks]);
+        return $this->render('list.html.twig', ['tasks' => $this->taskService->getList()]);
     }
 
     /**
      * @Route("/create", name="create_task", methods={"POST"})
      */
-    public function create(Request $request, TaskService $taskService): RedirectResponse
+    public function create(Request $request): RedirectResponse
     {
         $title = $request->request->get('title');
 
-        if (empty($title)) {
-            return $this->redirectToRoute('to_do_list');
+        if (!empty($title)) {
+            $this->taskService->create($title);
         }
-
-        $taskService->create($title);
 
         return $this->redirectToRoute('to_do_list');
     }
@@ -40,18 +44,18 @@ class ToDoListController extends AbstractController
     /**
      * @Route("/switch-status/{id}", name="switch-status")
      */
-    public function switchStatus(TaskService $taskService, $id): RedirectResponse
+    public function switchStatus(int $id): RedirectResponse
     {
-        $taskService->switch($id);
+        $this->taskService->switch($id);
         return $this->redirectToRoute('to_do_list');
     }
 
     /**
      * @Route("/delete/{id}", name="delete")
      */
-    public function delete(TaskService $taskService, $id): RedirectResponse
+    public function delete(int $id): RedirectResponse
     {
-        $taskService->delete($id);
+        $this->taskService->delete($id);
         return $this->redirectToRoute('to_do_list');
     }
 }

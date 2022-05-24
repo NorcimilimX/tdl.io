@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Services;
 
 use App\Entity\Task;
@@ -16,7 +18,12 @@ class TaskService
         $this->entityManager = $entityManager;
     }
 
-    public function create($title)
+    public function getList(): array
+    {
+        return $this->entityManager->getRepository(Task::class)->findBy([], ['id' => 'DESC']);
+    }
+
+    public function create(string $title): void
     {
         $task = new Task();
         $task->setTitle($title);
@@ -24,17 +31,16 @@ class TaskService
         $this->entityManager->flush();
     }
 
-    public function switch($id)
+    public function switch(int $id): void
     {
         $task = $this->entityManager->getRepository(Task::class)->find($id);
         $task->setStatus( ! $task->isStatus() );
         $this->entityManager->flush();
     }
 
-    public function delete($id)
+    public function delete(int $id): void
     {
-        $task = $this->entityManager->getRepository(Task::class)->find($id);
-        $this->entityManager->remove($task);
+        $this->entityManager->remove($this->entityManager->getRepository(Task::class)->find($id));
         $this->entityManager->flush();
     }
 }
